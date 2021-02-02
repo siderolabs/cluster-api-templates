@@ -1,0 +1,150 @@
+## Cluster configs
+
+apiVersion: cluster.x-k8s.io/v1alpha3
+kind: Cluster
+metadata:
+  name: ${CLUSTER_NAME}
+spec:
+  clusterNetwork:
+    pods:
+      cidrBlocks:
+        - 192.168.0.0/16
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+    kind: AWSCluster
+    name: ${CLUSTER_NAME}
+  controlPlaneRef:
+    kind: TalosControlPlane
+    apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
+    name: ${CLUSTER_NAME}-controlplane
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+kind: AWSCluster
+metadata:
+  name: ${CLUSTER_NAME}
+spec:
+  region: ${REGION}
+  sshKeyName: ${SSH_KEY}
+  networkSpec:
+    vpc:
+      id: ${VPC_ID}
+    subnets:
+      - id: ${SUBNET}
+---
+## Control plane configs
+
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+kind: AWSMachineTemplate
+metadata:
+  name: ${CLUSTER_NAME}-controlplane
+spec:
+  template:
+    spec:
+      cloudInit:
+        insecureSkipSecretsManager: true
+      instanceType: ${CP_INSTANCE_TYPE}
+      rootVolume:
+        size: ${CP_VOL_SIZE}
+      sshKeyName: ${SSH_KEY}
+      ami:
+        id: ${CP_AMI_ID}
+      additionalSecurityGroups: ${CP_ADDL_SEC_GROUPS}
+      publicIP: true
+      iamInstanceProfile: ${CP_IAM_PROFILE}
+      subnet:
+        id: ${SUBNET}
+---
+apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
+kind: TalosControlPlane
+metadata:
+  name: ${CLUSTER_NAME}-controlplane
+spec:
+  version: v${K8S_VERSION}
+  replicas: ${CP_COUNT}
+  infrastructureTemplate:
+    kind: AWSMachineTemplate
+    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+    name: ${CLUSTER_NAME}-controlplane
+  controlPlaneConfig:
+    init:
+      generateType: init
+      configPatches:
+        - op: add
+          path: /machine/kubelet/extraArgs
+          value:
+            cloud-provider: "external"
+        - op: add
+          path: /machine/kubelet/registerWithFQDN
+          value: true
+        - op: add
+          path: /cluster/extraManifests
+          value:
+            - https://raw.githubusercontent.com/kubernetes/cloud-provider-aws/master/manifests/rbac.yaml
+            - https://raw.githubusercontent.com/kubernetes/cloud-provider-aws/master/manifests/aws-cloud-controller-manager-daemonset.yaml
+    controlplane:
+      generateType: controlplane
+      configPatches:
+        - op: add
+          path: /machine/kubelet/extraArgs
+          value:
+            cloud-provider: "external"
+        - op: add
+          path: /machine/kubelet/registerWithFQDN
+          value: true
+---
+## Worker machinepool configs
+
+apiVersion: bootstrap.cluster.x-k8s.io/v1alpha3
+kind: TalosConfig
+metadata:
+  name: ${CLUSTER_NAME}-workers
+  namespace: default
+spec:
+  generateType: join
+  configPatches:
+    - op: add
+      path: /machine/kubelet/extraArgs
+      value:
+        cloud-provider: "external"
+    - op: add
+      path: /machine/kubelet/registerWithFQDN
+      value: true
+---
+apiVersion: exp.cluster.x-k8s.io/v1alpha3
+kind: MachinePool
+metadata:
+  name: ${CLUSTER_NAME}-workers
+spec:
+  clusterName: ${CLUSTER_NAME}
+  replicas: ${WORKER_POOL_DESIRED}
+  template:
+    spec:
+      bootstrap:
+        configRef:
+          apiVersion: bootstrap.cluster.x-k8s.io/v1alpha3
+          kind: TalosConfig
+          name: ${CLUSTER_NAME}-workers
+      clusterName: ${CLUSTER_NAME}
+      infrastructureRef:
+        apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+        kind: AWSMachinePool
+        name: ${CLUSTER_NAME}-workers
+      version: ${K8S_VERSION}
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+kind: AWSMachinePool
+metadata:
+  name: ${CLUSTER_NAME}-workers
+spec:
+  minSize: ${WORKER_POOL_MIN}
+  maxSize: ${WORKER_POOL_MAX}
+  awsLaunchTemplate:
+    instanceType: ${WORKER_INSTANCE_TYPE}
+    sshKeyName: ${SSH_KEY}
+    additionalSecurityGroups: ${WORKER_ADDL_SEC_GROUPS}
+    rootVolume:
+      size: ${WORKER_VOL_SIZE}
+    ami:
+      id: ${WORKER_AMI_ID}
+    iamInstanceProfile: ${WORKER_IAM_PROFILE}
+---
