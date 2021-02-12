@@ -1,0 +1,115 @@
+---
+
+## Cluster configs
+
+apiVersion: cluster.x-k8s.io/v1alpha3
+kind: Cluster
+metadata:
+  name: ${CLUSTER_NAME}
+spec:
+  clusterNetwork:
+    pods:
+      cidrBlocks: ["192.168.0.0/16"]
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+    kind: GCPCluster
+    name: ${CLUSTER_NAME}
+  controlPlaneRef:
+    kind: TalosControlPlane
+    apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
+    name: ${CLUSTER_NAME}-controlplane
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+kind: GCPCluster
+metadata:
+  name: ${CLUSTER_NAME}
+spec:
+  project: ${PROJECT}
+  region: ${REGION}
+  network:
+    name: ${NETWORK}
+---
+
+## Control plane configs
+
+apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
+kind: TalosControlPlane
+metadata:
+  name: ${CLUSTER_NAME}-controlplane
+spec:
+  version: v${K8S_VERSION}
+  replicas: ${CP_COUNT}
+  infrastructureTemplate:
+    kind: GCPMachineTemplate
+    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+    name: ${CLUSTER_NAME}-controlplane
+  controlPlaneConfig:
+    init:
+      generateType: init
+      talosVersion: v0.9
+    controlplane:
+      generateType: controlplane
+      talosVersion: v0.9
+---
+kind: GCPMachineTemplate
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+metadata:
+  name: ${CLUSTER_NAME}-controlplane
+spec:
+  template:
+    spec:
+      instanceType: ${CP_INSTANCE_TYPE}
+      image: ${CP_IMAGE_ID}
+      serviceAccounts: {}
+      publicIP: true
+      rootDeviceSize: ${CP_VOL_SIZE}
+---
+
+## Worker configs
+
+apiVersion: cluster.x-k8s.io/v1alpha3
+kind: MachineDeployment
+metadata:
+  name: ${CLUSTER_NAME}-workers
+spec:
+  clusterName: ${CLUSTER_NAME}
+  replicas: ${WORKER_COUNT}
+  selector:
+    matchLabels:
+  template:
+    spec:
+      clusterName: ${CLUSTER_NAME}
+      failureDomain: ${REGION}-a
+      version: ${K8S_VERSION}
+      bootstrap:
+        configRef:
+          name: ${CLUSTER_NAME}-workers
+          apiVersion: bootstrap.cluster.x-k8s.io/v1alpha3
+          kind: TalosConfigTemplate
+      infrastructureRef:
+        name: ${CLUSTER_NAME}-workers
+        apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+        kind: GCPMachineTemplate
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+kind: GCPMachineTemplate
+metadata:
+  name: ${CLUSTER_NAME}-workers
+spec:
+  template:
+    spec:
+      instanceType: ${WORKER_INSTANCE_TYPE}
+      image: ${WORKER_IMAGE_ID}
+      serviceAccounts: {}
+      publicIP: true
+      rootDeviceSize: ${WORKER_VOL_SIZE}
+---
+apiVersion: bootstrap.cluster.x-k8s.io/v1alpha3
+kind: TalosConfigTemplate
+metadata:
+  name: ${CLUSTER_NAME}-workers
+spec:
+  template:
+    spec:
+      generateType: join
+      talosVersion: v0.9
