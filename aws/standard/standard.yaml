@@ -68,6 +68,7 @@ spec:
   controlPlaneConfig:
     init:
       generateType: init
+      talosVersion: ${TALOS_VERSION}
       configPatches:
         - op: add
           path: /machine/kubelet/extraArgs
@@ -83,6 +84,7 @@ spec:
             - https://raw.githubusercontent.com/kubernetes/cloud-provider-aws/master/manifests/aws-cloud-controller-manager-daemonset.yaml
     controlplane:
       generateType: controlplane
+      talosVersion: ${TALOS_VERSION}
       configPatches:
         - op: add
           path: /machine/kubelet/extraArgs
@@ -102,6 +104,7 @@ spec:
   template:
     spec:
       generateType: join
+      talosVersion: ${TALOS_VERSION}
       configPatches:
         - op: add
           path: /machine/kubelet/extraArgs
