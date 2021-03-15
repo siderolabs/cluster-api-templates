@@ -80,8 +80,8 @@ spec:
         - op: add
           path: /cluster/extraManifests
           value:
-            - https://raw.githubusercontent.com/kubernetes/cloud-provider-aws/master/manifests/rbac.yaml
-            - https://raw.githubusercontent.com/kubernetes/cloud-provider-aws/master/manifests/aws-cloud-controller-manager-daemonset.yaml
+            - https://raw.githubusercontent.com/kubernetes/cloud-provider-aws/${CLOUD_PROVIDER_VERSION}/manifests/rbac.yaml
+            - https://raw.githubusercontent.com/kubernetes/cloud-provider-aws/${CLOUD_PROVIDER_VERSION}/manifests/aws-cloud-controller-manager-daemonset.yaml
     controlplane:
       generateType: controlplane
       talosVersion: ${TALOS_VERSION}
