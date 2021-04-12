@@ -1,9 +1,15 @@
 # AWS
 
-As of this writing, we support two types of AWS deployments with Cluster API:
-- A "standard" cluster with HA control plane and a machine deployment for workers
-- A cluster that uses autoscaling groups for the worker set.
-Autoscaling groups are called "MachinePools" in Cluster API lingo.
+As of this writing, we support two types of AWS deployments with Cluster API (CAPI):
+
+- A "standard" cluster with HA control plane and a machine deployment for workers.
+- An "autoscaling-workers" cluster that uses autoscaling groups for the worker set (they are called "MachinePools" in Cluster API lingo).
+
+Currently supported versions:
+
+- Talos: v0.10+ (see releases in this repository for previous versions).
+- cluster-api-provider-aws (CAPI): [v0.6.4](https://github.com/kubernetes-sigs/cluster-api-provider-aws/releases/tag/v0.6.4).
+- cloud-provider-aws: [v1.20.0-alpha.0](https://github.com/kubernetes/cloud-provider-aws/releases/tag/v1.20.0-alpha.0).
 
 ## Assumptions and Caveats
 
@@ -14,7 +20,7 @@ Unless you have Direct Connect or some VPN to your AWS environment, VMs on this 
 
 ### Cloud
 
-- In order for the cloud-provider to work properly, you should define two IAM policies in your environment: one for controlplane nodes and one for workers.
+- In order for the cloud-provider-aws to work properly, you should define two IAM policies in your environment: one for controlplane nodes and one for workers.
 See [here](https://kubernetes.github.io/cloud-provider-aws/prerequisites/) for the defined policies that need to be created.
 
 - Create a security group that allows port 50000 to your VMs.
@@ -32,7 +38,7 @@ export EXP_MACHINE_POOL=true
 
 - Export the path to your AWS credentials by issuing the following, updating the credentials path as necessary:
 ```bash
-export AWS_B64ENCODED_CREDENTIALS=$(cat ~/.aws/credentials | base64 | tr -d '\n') 
+export AWS_B64ENCODED_CREDENTIALS=$(cat ~/.aws/credentials | base64 | tr -d '\n')
 ```
 
 - Using Cluster API's `clusterctl` tool, initialize the management plane:
@@ -48,7 +54,7 @@ kubectl patch deploy -n capa-system capa-controller-manager --type='json' -p='[{
 
 ## Create cluster
 
-- First, using either the [autoscaling](./autoscaling-workers/autoscaling-workers.env) or [standard](./standard/standard.env) environment file as a base, substituting information as necessary to match your AWS environment.
+First, using either the [autoscaling](./autoscaling-workers/autoscaling-workers.env) or [standard](./standard/standard.env) environment file as a base, substituting information as necessary to match your AWS environment.
 
 - Source the environment variables with `source /path/to/envfile`
 
