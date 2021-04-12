@@ -71,28 +71,29 @@ spec:
       talosVersion: ${TALOS_VERSION}
       configPatches:
         - op: add
-          path: /machine/kubelet/extraArgs
-          value:
-            cloud-provider: "external"
-        - op: add
           path: /machine/kubelet/registerWithFQDN
           value: true
         - op: add
-          path: /cluster/extraManifests
+          path: /cluster/externalCloudProvider
           value:
-            - https://raw.githubusercontent.com/kubernetes/cloud-provider-aws/${CLOUD_PROVIDER_VERSION}/manifests/rbac.yaml
-            - https://raw.githubusercontent.com/kubernetes/cloud-provider-aws/${CLOUD_PROVIDER_VERSION}/manifests/aws-cloud-controller-manager-daemonset.yaml
+            enabled: true
+            manifests:
+              - https://raw.githubusercontent.com/kubernetes/cloud-provider-aws/${CLOUD_PROVIDER_VERSION}/manifests/rbac.yaml
+              - https://raw.githubusercontent.com/kubernetes/cloud-provider-aws/${CLOUD_PROVIDER_VERSION}/manifests/aws-cloud-controller-manager-daemonset.yaml
     controlplane:
       generateType: controlplane
       talosVersion: ${TALOS_VERSION}
       configPatches:
         - op: add
-          path: /machine/kubelet/extraArgs
-          value:
-            cloud-provider: "external"
-        - op: add
           path: /machine/kubelet/registerWithFQDN
           value: true
+        - op: add
+          path: /cluster/externalCloudProvider
+          value:
+            enabled: true
+            manifests:
+              - https://raw.githubusercontent.com/kubernetes/cloud-provider-aws/${CLOUD_PROVIDER_VERSION}/manifests/rbac.yaml
+              - https://raw.githubusercontent.com/kubernetes/cloud-provider-aws/${CLOUD_PROVIDER_VERSION}/manifests/aws-cloud-controller-manager-daemonset.yaml
 ---
 ## Worker deployment configs
 
@@ -107,12 +108,12 @@ spec:
       talosVersion: ${TALOS_VERSION}
       configPatches:
         - op: add
-          path: /machine/kubelet/extraArgs
-          value:
-            cloud-provider: "external"
-        - op: add
           path: /machine/kubelet/registerWithFQDN
           value: true
+        - op: add
+          path: /cluster/externalCloudProvider
+          value:
+            enabled: true
 ---
 apiVersion: cluster.x-k8s.io/v1alpha3
 kind: MachineDeployment
