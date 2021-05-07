@@ -16,6 +16,8 @@ Currently supported versions:
 This guide assumes that you have an existing VPC and subnet setup in your AWS environment.
 Unless you have Direct Connect or some VPN to your AWS environment, VMs on this subnet should be allowed to have public IPs so that you can connect to the instances via talosctl.
 
+For the multi-AZ setup, it is assumed that the user has pre-created both private and public subnets for use, as well as a loadbalancer that will be used to target the Talos control plane nodes at port 50000.
+
 ## Preparation
 
 ### Cloud
@@ -23,8 +25,8 @@ Unless you have Direct Connect or some VPN to your AWS environment, VMs on this 
 - In order for the cloud-provider-aws to work properly, you should define two IAM policies in your environment: one for controlplane nodes and one for workers.
 See [here](https://kubernetes.github.io/cloud-provider-aws/prerequisites/) for the defined policies that need to be created.
 
-- Create a security group that allows port 50000 to your VMs.
-This will be necessary in order to connect to these VMs via talosctl.
+- Create a security group that allows port 50000 to your VMs, as well as port 50001 between the VMs themselves.
+This will be necessary in order to connect to these VMs via talosctl and for trustd communication between the VMs.
 
 ### Management Plane
 
@@ -54,7 +56,7 @@ kubectl patch deploy -n capa-system capa-controller-manager --type='json' -p='[{
 
 ## Create cluster
 
-First, using either the [autoscaling](./autoscaling-workers/autoscaling-workers.env) or [standard](./standard/standard.env) environment file as a base, substituting information as necessary to match your AWS environment.
+First, using either the [autoscaling](./autoscaling-workers/autoscaling-workers.env), [multi-az](./multi-az/multi-az.env), or [standard](./standard/standard.env) environment file as a base, substituting information as necessary to match your AWS environment.
 
 - Source the environment variables with `source /path/to/envfile`
 
@@ -63,6 +65,11 @@ First, using either the [autoscaling](./autoscaling-workers/autoscaling-workers.
 For standard:
 ```bash
 clusterctl config cluster ${CLUSTER_NAME} --from https://github.com/talos-systems/cluster-api-templates/blob/main/aws/standard/standard.yaml | kubectl apply -f -
+```
+
+For multi-AZ:
+```bash
+clusterctl config cluster ${CLUSTER_NAME} --from https://github.com/talos-systems/cluster-api-templates/blob/main/aws/multi-az/multi-az.yaml | kubectl apply -f -
 ```
 
 For MachinePools/Autoscaling groups:
