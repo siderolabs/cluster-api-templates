@@ -71,6 +71,12 @@ spec:
       talosVersion: ${TALOS_VERSION}
       configPatches:
         - op: add
+          path: /cluster/network/cni
+          value:
+            name: custom
+            urls:
+              - https://docs.projectcalico.org/${CALICO_VERSION}/manifests/calico.yaml
+        - op: add
           path: /machine/kubelet/registerWithFQDN
           value: true
         - op: add
@@ -84,6 +90,12 @@ spec:
       generateType: controlplane
       talosVersion: ${TALOS_VERSION}
       configPatches:
+        - op: add
+          path: /cluster/network/cni
+          value:
+            name: custom
+            urls:
+              - https://docs.projectcalico.org/${CALICO_VERSION}/manifests/calico.yaml
         - op: add
           path: /machine/kubelet/registerWithFQDN
           value: true

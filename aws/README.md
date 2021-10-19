@@ -18,6 +18,8 @@ Unless you have Direct Connect or some VPN to your AWS environment, VMs on this 
 
 For the multi-AZ setup, it is assumed that the user has pre-created both private and public subnets for use, as well as a loadbalancer that will be used to target the Talos control plane nodes at port 50000.
 
+Calico is the only supported CNI right now. The AWS Cluster API provider sets up Calico rules by default in its created security groups. Other CNIs can likely be used, but it will take some extra work on setting up the groups manually and specifying them as extra groups in the cluster manifests.
+
 ## Preparation
 
 ### Cloud
