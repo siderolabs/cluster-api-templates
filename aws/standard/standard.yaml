@@ -1,5 +1,4 @@
 ## Cluster configs
-
 apiVersion: cluster.x-k8s.io/v1alpha3
 kind: Cluster
 metadata:
@@ -23,16 +22,15 @@ kind: AWSCluster
 metadata:
   name: ${CLUSTER_NAME}
 spec:
-  region: ${REGION}
-  sshKeyName: ${SSH_KEY}
+  region: ${AWS_REGION}
+  sshKeyName: ${AWS_SSH_KEY_NAME}
   networkSpec:
     vpc:
-      id: ${VPC_ID}
+      id: ${AWS_VPC_ID}
     subnets:
-      - id: ${SUBNET}
+      - id: ${AWS_SUBNET}
 ---
 ## Control plane configs
-
 apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
 kind: AWSMachineTemplate
 metadata:
@@ -42,25 +40,25 @@ spec:
     spec:
       cloudInit:
         insecureSkipSecretsManager: true
-      instanceType: ${CP_INSTANCE_TYPE}
+      instanceType: ${AWS_CONTROL_PLANE_MACHINE_TYPE}
       rootVolume:
-        size: ${CP_VOL_SIZE}
-      sshKeyName: ${SSH_KEY}
+        size: ${AWS_CONTROL_PLANE_VOL_SIZE}
+      sshKeyName: ${AWS_SSH_KEY_NAME}
       ami:
-        id: ${CP_AMI_ID}
-      additionalSecurityGroups: ${CP_ADDL_SEC_GROUPS}
+        id: ${AWS_CONTROL_PLANE_AMI_ID}
+      additionalSecurityGroups: ${AWS_CONTROL_PLANE_ADDL_SEC_GROUPS}
       publicIP: true
-      iamInstanceProfile: ${CP_IAM_PROFILE}
+      iamInstanceProfile: ${AWS_CONTROL_PLANE_IAM_PROFILE}
       subnet:
-        id: ${SUBNET}
+        id: ${AWS_SUBNET}
 ---
 apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
 kind: TalosControlPlane
 metadata:
   name: ${CLUSTER_NAME}-controlplane
 spec:
-  version: v${K8S_VERSION}
-  replicas: ${CP_COUNT}
+  version: v${KUBERNETES_VERSION}
+  replicas: ${CONTROL_PLANE_MACHINE_COUNT}
   infrastructureTemplate:
     kind: AWSMachineTemplate
     apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
@@ -84,8 +82,8 @@ spec:
           value:
             enabled: true
             manifests:
-              - https://raw.githubusercontent.com/kubernetes/cloud-provider-aws/${CLOUD_PROVIDER_VERSION}/manifests/rbac.yaml
-              - https://raw.githubusercontent.com/kubernetes/cloud-provider-aws/${CLOUD_PROVIDER_VERSION}/manifests/aws-cloud-controller-manager-daemonset.yaml
+              - https://raw.githubusercontent.com/kubernetes/cloud-provider-aws/${AWS_CLOUD_PROVIDER_VERSION}/manifests/rbac.yaml
+              - https://raw.githubusercontent.com/kubernetes/cloud-provider-aws/${AWS_CLOUD_PROVIDER_VERSION}/manifests/aws-cloud-controller-manager-daemonset.yaml
     controlplane:
       generateType: controlplane
       talosVersion: ${TALOS_VERSION}
@@ -104,11 +102,10 @@ spec:
           value:
             enabled: true
             manifests:
-              - https://raw.githubusercontent.com/kubernetes/cloud-provider-aws/${CLOUD_PROVIDER_VERSION}/manifests/rbac.yaml
-              - https://raw.githubusercontent.com/kubernetes/cloud-provider-aws/${CLOUD_PROVIDER_VERSION}/manifests/aws-cloud-controller-manager-daemonset.yaml
+              - https://raw.githubusercontent.com/kubernetes/cloud-provider-aws/${AWS_CLOUD_PROVIDER_VERSION}/manifests/rbac.yaml
+              - https://raw.githubusercontent.com/kubernetes/cloud-provider-aws/${AWS_CLOUD_PROVIDER_VERSION}/manifests/aws-cloud-controller-manager-daemonset.yaml
 ---
 ## Worker deployment configs
-
 apiVersion: bootstrap.cluster.x-k8s.io/v1alpha3
 kind: TalosConfigTemplate
 metadata:
@@ -136,7 +133,7 @@ metadata:
   name: ${CLUSTER_NAME}-workers
 spec:
   clusterName: ${CLUSTER_NAME}
-  replicas: ${WORKER_COUNT}
+  replicas: ${WORKER_MACHINE_COUNT}
   selector:
     matchLabels:
       cluster.x-k8s.io/cluster-name: ${CLUSTER_NAME}
@@ -157,7 +154,7 @@ spec:
         apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
         kind: AWSMachineTemplate
         name: ${CLUSTER_NAME}-workers
-      version: ${K8S_VERSION}
+      version: ${KUBERNETES_VERSION}
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
 kind: AWSMachineTemplate
@@ -168,20 +165,19 @@ spec:
     spec:
       cloudInit:
         insecureSkipSecretsManager: true
-      instanceType: ${WORKER_INSTANCE_TYPE}
+      instanceType: ${AWS_NODE_MACHINE_TYPE}
       rootVolume:
-        size: ${WORKER_VOL_SIZE}
-      sshKeyName: ${SSH_KEY}
+        size: ${AWS_NODE_VOL_SIZE}
+      sshKeyName: ${AWS_SSH_KEY_NAME}
       ami:
-        id: ${WORKER_AMI_ID}
+        id: ${AWS_NODE_AMI_ID}
       subnet:
-        id: ${SUBNET}
-      additionalSecurityGroups: ${WORKER_ADDL_SEC_GROUPS}
+        id: ${AWS_SUBNET}
+      additionalSecurityGroups: ${AWS_NODE_ADDL_SEC_GROUPS}
       publicIP: true
-      iamInstanceProfile: ${WORKER_IAM_PROFILE}
+      iamInstanceProfile: ${AWS_NODE_IAM_PROFILE}
 ---
 ## Health check for workers
-
 apiVersion: cluster.x-k8s.io/v1alpha3
 kind: MachineHealthCheck
 metadata:
