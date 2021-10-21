@@ -24,10 +24,10 @@ kind: GCPCluster
 metadata:
   name: ${CLUSTER_NAME}
 spec:
-  project: ${PROJECT}
-  region: ${REGION}
+  project: ${GCP_PROJECT}
+  region: ${GCP_REGION}
   network:
-    name: ${NETWORK}
+    name: ${GCP_NETWORK}
 ---
 
 ## Control plane configs
@@ -37,8 +37,8 @@ kind: TalosControlPlane
 metadata:
   name: ${CLUSTER_NAME}-controlplane
 spec:
-  version: v${K8S_VERSION}
-  replicas: ${CP_COUNT}
+  version: v${KUBERNETES_VERSION}
+  replicas: ${CONTROL_PLANE_MACHINE_COUNT}
   infrastructureTemplate:
     kind: GCPMachineTemplate
     apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
@@ -58,11 +58,11 @@ metadata:
 spec:
   template:
     spec:
-      instanceType: ${CP_INSTANCE_TYPE}
-      image: ${CP_IMAGE_ID}
+      instanceType: ${GCP_CONTROL_PLANE_MACHINE_TYPE}
+      image: ${GCP_CONTROL_PLANE_IMAGE_ID}
       serviceAccounts: {}
       publicIP: true
-      rootDeviceSize: ${CP_VOL_SIZE}
+      rootDeviceSize: ${GCP_CONTROL_PLANE_VOL_SIZE}
 ---
 
 ## Worker configs
@@ -73,14 +73,14 @@ metadata:
   name: ${CLUSTER_NAME}-workers
 spec:
   clusterName: ${CLUSTER_NAME}
-  replicas: ${WORKER_COUNT}
+  replicas: ${WORKER_MACHINE_COUNT}
   selector:
     matchLabels:
   template:
     spec:
       clusterName: ${CLUSTER_NAME}
-      failureDomain: ${REGION}-a
-      version: ${K8S_VERSION}
+      failureDomain: ${GCP_REGION}-a
+      version: ${KUBERNETES_VERSION}
       bootstrap:
         configRef:
           name: ${CLUSTER_NAME}-workers
@@ -98,11 +98,11 @@ metadata:
 spec:
   template:
     spec:
-      instanceType: ${WORKER_INSTANCE_TYPE}
-      image: ${WORKER_IMAGE_ID}
+      instanceType: ${GCP_NODE_MACHINE_TYPE}
+      image: ${GCP_NODE_IMAGE_ID}
       serviceAccounts: {}
       publicIP: true
-      rootDeviceSize: ${WORKER_VOL_SIZE}
+      rootDeviceSize: ${GCP_NODE_VOL_SIZE}
 ---
 apiVersion: bootstrap.cluster.x-k8s.io/v1alpha3
 kind: TalosConfigTemplate
