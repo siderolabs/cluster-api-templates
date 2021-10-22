@@ -2,7 +2,7 @@
 
 ## Cluster configs
 
-apiVersion: cluster.x-k8s.io/v1alpha3
+apiVersion: cluster.x-k8s.io/v1beta1
 kind: Cluster
 metadata:
   name: ${CLUSTER_NAME}
@@ -11,7 +11,7 @@ spec:
     pods:
       cidrBlocks: ["192.168.0.0/16"]
   infrastructureRef:
-    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
     kind: GCPCluster
     name: ${CLUSTER_NAME}
   controlPlaneRef:
@@ -19,7 +19,7 @@ spec:
     apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
     name: ${CLUSTER_NAME}-controlplane
 ---
-apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: GCPCluster
 metadata:
   name: ${CLUSTER_NAME}
@@ -41,18 +41,15 @@ spec:
   replicas: ${CONTROL_PLANE_MACHINE_COUNT}
   infrastructureTemplate:
     kind: GCPMachineTemplate
-    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
     name: ${CLUSTER_NAME}-controlplane
   controlPlaneConfig:
-    init:
-      generateType: init
-      talosVersion: ${TALOS_VERSION}
     controlplane:
       generateType: controlplane
       talosVersion: ${TALOS_VERSION}
 ---
 kind: GCPMachineTemplate
-apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 metadata:
   name: ${CLUSTER_NAME}-controlplane
 spec:
@@ -67,7 +64,7 @@ spec:
 
 ## Worker configs
 
-apiVersion: cluster.x-k8s.io/v1alpha3
+apiVersion: cluster.x-k8s.io/v1beta1
 kind: MachineDeployment
 metadata:
   name: ${CLUSTER_NAME}-workers
@@ -88,10 +85,10 @@ spec:
           kind: TalosConfigTemplate
       infrastructureRef:
         name: ${CLUSTER_NAME}-workers
-        apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+        apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
         kind: GCPMachineTemplate
 ---
-apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: GCPMachineTemplate
 metadata:
   name: ${CLUSTER_NAME}-workers

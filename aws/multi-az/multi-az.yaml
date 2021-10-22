@@ -1,6 +1,6 @@
 ## Cluster configs
 
-apiVersion: cluster.x-k8s.io/v1alpha3
+apiVersion: cluster.x-k8s.io/v1beta1
 kind: Cluster
 metadata:
   name: ${CLUSTER_NAME}
@@ -10,7 +10,7 @@ spec:
       cidrBlocks:
         - 192.168.0.0/16
   infrastructureRef:
-    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
     kind: AWSCluster
     name: ${CLUSTER_NAME}
   controlPlaneRef:
@@ -18,21 +18,21 @@ spec:
     apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
     name: ${CLUSTER_NAME}-controlplane
 ---
-apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: AWSCluster
 metadata:
   name: ${CLUSTER_NAME}
 spec:
   region: ${AWS_REGION}
   sshKeyName: ${AWS_SSH_KEY_NAME}
-  networkSpec:
+  network:
     vpc:
       id: ${AWS_VPC_ID}
     subnets: ${AWS_SUBNETS}
 ---
 ## Control plane configs
 
-apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: AWSMachineTemplate
 metadata:
   name: ${CLUSTER_NAME}-controlplane
@@ -59,33 +59,9 @@ spec:
   replicas: ${CONTROL_PLANE_MACHINE_COUNT}
   infrastructureTemplate:
     kind: AWSMachineTemplate
-    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
     name: ${CLUSTER_NAME}-controlplane
   controlPlaneConfig:
-    init:
-      generateType: init
-      talosVersion: ${TALOS_VERSION}
-      configPatches:
-        - op: add
-          path: /cluster/network/cni
-          value:
-            name: custom
-            urls:
-              - https://docs.projectcalico.org/${CALICO_VERSION}/manifests/calico.yaml
-        - op: add
-          path: /machine/kubelet/registerWithFQDN
-          value: true
-        - op: add
-          path: /cluster/externalCloudProvider
-          value:
-            enabled: true
-            manifests:
-              - https://raw.githubusercontent.com/kubernetes/cloud-provider-aws/${CLOUD_PROVIDER_VERSION}/manifests/rbac.yaml
-              - https://raw.githubusercontent.com/kubernetes/cloud-provider-aws/${CLOUD_PROVIDER_VERSION}/manifests/aws-cloud-controller-manager-daemonset.yaml
-        - op: add
-          path: /machine/certSANs
-          value:
-            - ${AWS_CONTROL_PLANE_LB_URL}
     controlplane:
       generateType: controlplane
       talosVersion: ${TALOS_VERSION}
@@ -133,7 +109,7 @@ spec:
           value: true
 ---
 ### Worker group A
-apiVersion: cluster.x-k8s.io/v1alpha3
+apiVersion: cluster.x-k8s.io/v1beta1
 kind: MachineDeployment
 metadata:
   labels:
@@ -160,12 +136,12 @@ spec:
           kind: TalosConfigTemplate
           name: ${CLUSTER_NAME}-workers
       infrastructureRef:
-        apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+        apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
         kind: AWSMachineTemplate
         name: ${CLUSTER_NAME}-workers-a
       version: ${KUBERNETES_VERSION}
 ---
-apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: AWSMachineTemplate
 metadata:
   name: ${CLUSTER_NAME}-workers-a
@@ -186,7 +162,7 @@ spec:
       additionalSecurityGroups: ${AWS_NODE_ADDL_SEC_GROUPS}
 ---
 ### Worker group B
-apiVersion: cluster.x-k8s.io/v1alpha3
+apiVersion: cluster.x-k8s.io/v1beta1
 kind: MachineDeployment
 metadata:
   labels:
@@ -213,12 +189,12 @@ spec:
           kind: TalosConfigTemplate
           name: ${CLUSTER_NAME}-workers
       infrastructureRef:
-        apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+        apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
         kind: AWSMachineTemplate
         name: ${CLUSTER_NAME}-workers-b
       version: ${KUBERNETES_VERSION}
 ---
-apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: AWSMachineTemplate
 metadata:
   name: ${CLUSTER_NAME}-workers-b
@@ -239,7 +215,7 @@ spec:
       additionalSecurityGroups: ${AWS_NODE_ADDL_SEC_GROUPS}
 ---
 ### Worker group C
-apiVersion: cluster.x-k8s.io/v1alpha3
+apiVersion: cluster.x-k8s.io/v1beta1
 kind: MachineDeployment
 metadata:
   labels:
@@ -266,12 +242,12 @@ spec:
           kind: TalosConfigTemplate
           name: ${CLUSTER_NAME}-workers
       infrastructureRef:
-        apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+        apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
         kind: AWSMachineTemplate
         name: ${CLUSTER_NAME}-workers-c
       version: ${KUBERNETES_VERSION}
 ---
-apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: AWSMachineTemplate
 metadata:
   name: ${CLUSTER_NAME}-workers-c
@@ -292,7 +268,7 @@ spec:
       additionalSecurityGroups: ${AWS_NODE_ADDL_SEC_GROUPS}
 ---
 ## Health check for all workers
-apiVersion: cluster.x-k8s.io/v1alpha3
+apiVersion: cluster.x-k8s.io/v1beta1
 kind: MachineHealthCheck
 metadata:
   name: ${CLUSTER_NAME}-worker-hc

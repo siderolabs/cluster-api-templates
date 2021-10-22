@@ -1,5 +1,5 @@
 ## Cluster configs
-apiVersion: cluster.x-k8s.io/v1alpha3
+apiVersion: cluster.x-k8s.io/v1beta1
 kind: Cluster
 metadata:
   name: ${CLUSTER_NAME}
@@ -9,7 +9,7 @@ spec:
       cidrBlocks:
         - 192.168.0.0/16
   infrastructureRef:
-    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
     kind: AWSCluster
     name: ${CLUSTER_NAME}
   controlPlaneRef:
@@ -17,21 +17,26 @@ spec:
     apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
     name: ${CLUSTER_NAME}-controlplane
 ---
-apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: AWSCluster
 metadata:
   name: ${CLUSTER_NAME}
 spec:
   region: ${AWS_REGION}
   sshKeyName: ${AWS_SSH_KEY_NAME}
-  networkSpec:
+  network:
     vpc:
       id: ${AWS_VPC_ID}
     subnets:
       - id: ${AWS_SUBNET}
+        isPublic: true
+        availabilityZone: us-east-1a 
+  controlPlaneLoadBalancer:
+    subnets:
+      - ${AWS_SUBNET}
 ---
 ## Control plane configs
-apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: AWSMachineTemplate
 metadata:
   name: ${CLUSTER_NAME}-controlplane
@@ -49,8 +54,6 @@ spec:
       additionalSecurityGroups: ${AWS_CONTROL_PLANE_ADDL_SEC_GROUPS}
       publicIP: true
       iamInstanceProfile: ${AWS_CONTROL_PLANE_IAM_PROFILE}
-      subnet:
-        id: ${AWS_SUBNET}
 ---
 apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
 kind: TalosControlPlane
@@ -61,29 +64,9 @@ spec:
   replicas: ${CONTROL_PLANE_MACHINE_COUNT}
   infrastructureTemplate:
     kind: AWSMachineTemplate
-    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
     name: ${CLUSTER_NAME}-controlplane
   controlPlaneConfig:
-    init:
-      generateType: init
-      talosVersion: ${TALOS_VERSION}
-      configPatches:
-        - op: add
-          path: /cluster/network/cni
-          value:
-            name: custom
-            urls:
-              - https://docs.projectcalico.org/${CALICO_VERSION}/manifests/calico.yaml
-        - op: add
-          path: /machine/kubelet/registerWithFQDN
-          value: true
-        - op: add
-          path: /cluster/externalCloudProvider
-          value:
-            enabled: true
-            manifests:
-              - https://raw.githubusercontent.com/kubernetes/cloud-provider-aws/${AWS_CLOUD_PROVIDER_VERSION}/manifests/rbac.yaml
-              - https://raw.githubusercontent.com/kubernetes/cloud-provider-aws/${AWS_CLOUD_PROVIDER_VERSION}/manifests/aws-cloud-controller-manager-daemonset.yaml
     controlplane:
       generateType: controlplane
       talosVersion: ${TALOS_VERSION}
@@ -124,7 +107,7 @@ spec:
           value:
             enabled: true
 ---
-apiVersion: cluster.x-k8s.io/v1alpha3
+apiVersion: cluster.x-k8s.io/v1beta1
 kind: MachineDeployment
 metadata:
   labels:
@@ -151,12 +134,12 @@ spec:
           kind: TalosConfigTemplate
           name: ${CLUSTER_NAME}-workers
       infrastructureRef:
-        apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+        apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
         kind: AWSMachineTemplate
         name: ${CLUSTER_NAME}-workers
       version: ${KUBERNETES_VERSION}
 ---
-apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: AWSMachineTemplate
 metadata:
   name: ${CLUSTER_NAME}-workers
@@ -171,14 +154,12 @@ spec:
       sshKeyName: ${AWS_SSH_KEY_NAME}
       ami:
         id: ${AWS_NODE_AMI_ID}
-      subnet:
-        id: ${AWS_SUBNET}
       additionalSecurityGroups: ${AWS_NODE_ADDL_SEC_GROUPS}
       publicIP: true
       iamInstanceProfile: ${AWS_NODE_IAM_PROFILE}
 ---
 ## Health check for workers
-apiVersion: cluster.x-k8s.io/v1alpha3
+apiVersion: cluster.x-k8s.io/v1beta1
 kind: MachineHealthCheck
 metadata:
   name: ${CLUSTER_NAME}-worker-hc
