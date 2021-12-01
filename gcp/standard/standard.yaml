@@ -1,8 +1,7 @@
 ---
-
 ## Cluster configs
 
-apiVersion: cluster.x-k8s.io/v1alpha3
+apiVersion: cluster.x-k8s.io/v1alpha4
 kind: Cluster
 metadata:
   name: ${CLUSTER_NAME}
@@ -11,7 +10,7 @@ spec:
     pods:
       cidrBlocks: ["192.168.0.0/16"]
   infrastructureRef:
-    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha4
     kind: GCPCluster
     name: ${CLUSTER_NAME}
   controlPlaneRef:
@@ -19,7 +18,7 @@ spec:
     apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
     name: ${CLUSTER_NAME}-controlplane
 ---
-apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha4
 kind: GCPCluster
 metadata:
   name: ${CLUSTER_NAME}
@@ -29,7 +28,6 @@ spec:
   network:
     name: ${GCP_NETWORK}
 ---
-
 ## Control plane configs
 
 apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
@@ -41,7 +39,7 @@ spec:
   replicas: ${CONTROL_PLANE_MACHINE_COUNT}
   infrastructureTemplate:
     kind: GCPMachineTemplate
-    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha4
     name: ${CLUSTER_NAME}-controlplane
   controlPlaneConfig:
     init:
@@ -52,7 +50,7 @@ spec:
       talosVersion: ${TALOS_VERSION}
 ---
 kind: GCPMachineTemplate
-apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha4
 metadata:
   name: ${CLUSTER_NAME}-controlplane
 spec:
@@ -60,23 +58,34 @@ spec:
     spec:
       instanceType: ${GCP_CONTROL_PLANE_MACHINE_TYPE}
       image: ${GCP_CONTROL_PLANE_IMAGE_ID}
-      serviceAccounts: {}
       publicIP: true
       rootDeviceSize: ${GCP_CONTROL_PLANE_VOL_SIZE}
+      serviceAccounts:
+        email: ${GCP_VM_SVC_ACCOUNT}
+        scopes:
+          - "https://www.googleapis.com/auth/compute"
 ---
-
 ## Worker configs
 
-apiVersion: cluster.x-k8s.io/v1alpha3
+apiVersion: cluster.x-k8s.io/v1alpha4
 kind: MachineDeployment
 metadata:
+  labels:
+    cluster.x-k8s.io/cluster-name: ${CLUSTER_NAME}
+    nodepool: nodepool-a
   name: ${CLUSTER_NAME}-workers
 spec:
   clusterName: ${CLUSTER_NAME}
   replicas: ${WORKER_MACHINE_COUNT}
   selector:
     matchLabels:
+      cluster.x-k8s.io/cluster-name: ${CLUSTER_NAME}
+      nodepool: nodepool-a
   template:
+    metadata:
+      labels:
+        cluster.x-k8s.io/cluster-name: ${CLUSTER_NAME}
+        nodepool: nodepool-a
     spec:
       clusterName: ${CLUSTER_NAME}
       failureDomain: ${GCP_REGION}-a
@@ -88,10 +97,10 @@ spec:
           kind: TalosConfigTemplate
       infrastructureRef:
         name: ${CLUSTER_NAME}-workers
-        apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+        apiVersion: infrastructure.cluster.x-k8s.io/v1alpha4
         kind: GCPMachineTemplate
 ---
-apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha4
 kind: GCPMachineTemplate
 metadata:
   name: ${CLUSTER_NAME}-workers
@@ -100,7 +109,10 @@ spec:
     spec:
       instanceType: ${GCP_NODE_MACHINE_TYPE}
       image: ${GCP_NODE_IMAGE_ID}
-      serviceAccounts: {}
+      serviceAccounts:
+        email: ${GCP_VM_SVC_ACCOUNT}
+        scopes:
+          - "https://www.googleapis.com/auth/compute"
       publicIP: true
       rootDeviceSize: ${GCP_NODE_VOL_SIZE}
 ---
@@ -113,3 +125,23 @@ spec:
     spec:
       generateType: join
       talosVersion: ${TALOS_VERSION}
+---
+## Health check for workers
+apiVersion: cluster.x-k8s.io/v1alpha4
+kind: MachineHealthCheck
+metadata:
+  name: ${CLUSTER_NAME}-worker-hc
+spec:
+  clusterName: ${CLUSTER_NAME}
+  maxUnhealthy: 40%
+  nodeStartupTimeout: 20m
+  selector:
+    matchLabels:
+      nodepool: nodepool-a
+  unhealthyConditions:
+    - type: Ready
+      status: Unknown
+      timeout: 300s
+    - type: Ready
+      status: "False"
+      timeout: 300s

@@ -1,5 +1,5 @@
 ## Cluster configs
-apiVersion: cluster.x-k8s.io/v1alpha3
+apiVersion: cluster.x-k8s.io/v1alpha4
 kind: Cluster
 metadata:
   name: ${CLUSTER_NAME}
@@ -9,7 +9,7 @@ spec:
       cidrBlocks:
         - 192.168.0.0/16
   infrastructureRef:
-    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha4
     kind: AWSCluster
     name: ${CLUSTER_NAME}
   controlPlaneRef:
@@ -17,21 +17,21 @@ spec:
     apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
     name: ${CLUSTER_NAME}-controlplane
 ---
-apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha4
 kind: AWSCluster
 metadata:
   name: ${CLUSTER_NAME}
 spec:
   region: ${AWS_REGION}
   sshKeyName: ${AWS_SSH_KEY_NAME}
-  networkSpec:
+  network:
     vpc:
       id: ${AWS_VPC_ID}
     subnets:
       - id: ${AWS_SUBNET}
 ---
 ## Control plane configs
-apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha4
 kind: AWSMachineTemplate
 metadata:
   name: ${CLUSTER_NAME}-controlplane
@@ -61,7 +61,7 @@ spec:
   replicas: ${CONTROL_PLANE_MACHINE_COUNT}
   infrastructureTemplate:
     kind: AWSMachineTemplate
-    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha4
     name: ${CLUSTER_NAME}-controlplane
   controlPlaneConfig:
     init:
@@ -124,7 +124,7 @@ spec:
           value:
             enabled: true
 ---
-apiVersion: cluster.x-k8s.io/v1alpha3
+apiVersion: cluster.x-k8s.io/v1alpha4
 kind: MachineDeployment
 metadata:
   labels:
@@ -151,12 +151,12 @@ spec:
           kind: TalosConfigTemplate
           name: ${CLUSTER_NAME}-workers
       infrastructureRef:
-        apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+        apiVersion: infrastructure.cluster.x-k8s.io/v1alpha4
         kind: AWSMachineTemplate
         name: ${CLUSTER_NAME}-workers
       version: ${KUBERNETES_VERSION}
 ---
-apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha4
 kind: AWSMachineTemplate
 metadata:
   name: ${CLUSTER_NAME}-workers
@@ -178,7 +178,7 @@ spec:
       iamInstanceProfile: ${AWS_NODE_IAM_PROFILE}
 ---
 ## Health check for workers
-apiVersion: cluster.x-k8s.io/v1alpha3
+apiVersion: cluster.x-k8s.io/v1alpha4
 kind: MachineHealthCheck
 metadata:
   name: ${CLUSTER_NAME}-worker-hc
