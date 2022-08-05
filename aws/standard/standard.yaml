@@ -76,7 +76,9 @@ spec:
           value:
             name: custom
             urls:
-              - https://docs.projectcalico.org/${CALICO_VERSION}/manifests/calico.yaml
+              # TODO: noel: revert to `${CALICO_VERSION}` once we have a calico release with
+              # fixed from https://github.com/projectcalico/calico/pull/6370
+              - https://docs.projectcalico.org/master/manifests/calico.yaml
         - op: add
           path: /machine/kubelet/registerWithFQDN
           value: true
@@ -85,8 +87,9 @@ spec:
           value:
             enabled: true
             manifests:
-              - https://raw.githubusercontent.com/kubernetes/cloud-provider-aws/${AWS_CLOUD_PROVIDER_VERSION}/manifests/rbac.yaml
-              - https://raw.githubusercontent.com/kubernetes/cloud-provider-aws/${AWS_CLOUD_PROVIDER_VERSION}/manifests/aws-cloud-controller-manager-daemonset.yaml
+              # TODO: noel: rever to `${AWS_CLOUD_PROVIDER_VERSION}` once we have a aws-cloud-provider release with
+              # fixes from https://github.com/kubernetes/cloud-provider-aws/pull/431
+              - https://raw.githubusercontent.com/siderolabs/cluster-api-templates/main/aws/manifests/ccm.yaml
 ---
 ## Worker deployment configs
 apiVersion: bootstrap.cluster.x-k8s.io/v1alpha3
