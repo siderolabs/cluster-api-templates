@@ -76,7 +76,7 @@ spec:
           value:
             name: custom
             urls:
-              - https://docs.projectcalico.org/${CALICO_VERSION}/manifests/calico.yaml
+              - https://raw.githubusercontent.com/projectcalico/calico/${CALICO_VERSION}/manifests/calico.yaml
         - op: add
           path: /machine/kubelet/registerWithFQDN
           value: true
