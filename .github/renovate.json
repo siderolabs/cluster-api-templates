@@ -10,7 +10,7 @@
     "regexManagers": [
         {
             "fileMatch": [
-                "*.env"
+                "\\.env"
             ],
             "matchStrings": [
                 "# renovate: datasource=(?<datasource>.*?)(?:\\s+extractVersion=(?<extractVersion>.+?))?(?:\\s+versioning=(?<versioning>.+?))?\\s+depName=(?<depName>.+?)?\\s.*_VERSION=(?<currentValue>.*)?"
