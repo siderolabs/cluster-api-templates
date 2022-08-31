@@ -85,8 +85,7 @@ spec:
           value:
             enabled: true
             manifests:
-              - https://raw.githubusercontent.com/kubernetes/cloud-provider-aws/${AWS_CLOUD_PROVIDER_VERSION}/manifests/rbac.yaml
-              - https://raw.githubusercontent.com/kubernetes/cloud-provider-aws/${AWS_CLOUD_PROVIDER_VERSION}/manifests/aws-cloud-controller-manager-daemonset.yaml
+              - https://raw.githubusercontent.com/siderolabs/cluster-api-templates/main/aws/manifests/ccm.yaml
 ---
 ## Worker deployment configs
 apiVersion: bootstrap.cluster.x-k8s.io/v1alpha3
