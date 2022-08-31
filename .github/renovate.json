@@ -31,6 +31,12 @@
     ],
     "packageRules": [
         {
+            "matchPackageNames": [
+                "siderolabs/talos"
+            ],
+            "versioning": "regex:^v(?<major>\\d+)\\.(?<minor>\\d+)\\.?(?<patch>\\d+)?$"
+        },
+        {
             "matchPackagePatterns": [
                 "*"
             ],
