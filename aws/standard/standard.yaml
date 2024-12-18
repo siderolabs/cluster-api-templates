@@ -3,6 +3,7 @@ apiVersion: cluster.x-k8s.io/v1beta1
 kind: Cluster
 metadata:
   name: ${CLUSTER_NAME}
+  namespace: ${NAMESPACE}
 spec:
   clusterNetwork:
     pods:
@@ -12,15 +13,18 @@ spec:
     apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
     kind: AWSCluster
     name: ${CLUSTER_NAME}
+    namespace: ${NAMESPACE}
   controlPlaneRef:
     kind: TalosControlPlane
     apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
     name: ${CLUSTER_NAME}-controlplane
+    namespace: ${NAMESPACE}
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: AWSCluster
 metadata:
   name: ${CLUSTER_NAME}
+  namespace: ${NAMESPACE}
 spec:
   region: ${AWS_REGION}
   sshKeyName: ${AWS_SSH_KEY_NAME}
@@ -40,6 +44,7 @@ apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: AWSMachineTemplate
 metadata:
   name: ${CLUSTER_NAME}-controlplane
+  namespace: ${NAMESPACE}
 spec:
   template:
     spec:
@@ -59,6 +64,7 @@ apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
 kind: TalosControlPlane
 metadata:
   name: ${CLUSTER_NAME}-controlplane
+  namespace: ${NAMESPACE}
 spec:
   version: v${KUBERNETES_VERSION}
   replicas: ${CONTROL_PLANE_MACHINE_COUNT}
@@ -66,6 +72,7 @@ spec:
     kind: AWSMachineTemplate
     apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
     name: ${CLUSTER_NAME}-controlplane
+    namespace: ${NAMESPACE}
   controlPlaneConfig:
     controlplane:
       generateType: controlplane
@@ -92,6 +99,7 @@ apiVersion: bootstrap.cluster.x-k8s.io/v1alpha3
 kind: TalosConfigTemplate
 metadata:
   name: ${CLUSTER_NAME}-workers
+  namespace: ${NAMESPACE}
 spec:
   template:
     spec:
@@ -113,6 +121,7 @@ metadata:
     cluster.x-k8s.io/cluster-name: ${CLUSTER_NAME}
     nodepool: nodepool-a
   name: ${CLUSTER_NAME}-workers
+  namespace: ${NAMESPACE}
 spec:
   clusterName: ${CLUSTER_NAME}
   replicas: ${WORKER_MACHINE_COUNT}
@@ -132,16 +141,19 @@ spec:
           apiVersion: bootstrap.cluster.x-k8s.io/v1alpha3
           kind: TalosConfigTemplate
           name: ${CLUSTER_NAME}-workers
+          namespace: ${NAMESPACE}
       infrastructureRef:
         apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
         kind: AWSMachineTemplate
         name: ${CLUSTER_NAME}-workers
+        namespace: ${NAMESPACE}
       version: ${KUBERNETES_VERSION}
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: AWSMachineTemplate
 metadata:
   name: ${CLUSTER_NAME}-workers
+  namespace: ${NAMESPACE}
 spec:
   template:
     spec:
@@ -162,6 +174,7 @@ apiVersion: cluster.x-k8s.io/v1beta1
 kind: MachineHealthCheck
 metadata:
   name: ${CLUSTER_NAME}-worker-hc
+  namespace: ${NAMESPACE}
 spec:
   clusterName: ${CLUSTER_NAME}
   maxUnhealthy: 40%
