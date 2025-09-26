@@ -1,5 +1,5 @@
 # renovate: depName=aws-cloud-controller-manager
-AWS_CCM_VERSION := 0.0.7
+AWS_CCM_VERSION := 0.0.10
 
 # run a make update whenever the helm chart version changes
 update:
