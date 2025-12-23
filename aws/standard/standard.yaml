@@ -10,7 +10,7 @@ spec:
       cidrBlocks:
         - 192.168.0.0/16
   infrastructureRef:
-    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
     kind: AWSCluster
     name: ${CLUSTER_NAME}
     namespace: ${NAMESPACE}
@@ -20,7 +20,7 @@ spec:
     name: ${CLUSTER_NAME}-controlplane
     namespace: ${NAMESPACE}
 ---
-apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
 kind: AWSCluster
 metadata:
   name: ${CLUSTER_NAME}
@@ -36,11 +36,13 @@ spec:
         isPublic: true
         availabilityZone: ${AWS_SUBNET_AZ}
   controlPlaneLoadBalancer:
+    loadBalancerType: nlb
+    healthCheckProtocol: TCP
     subnets:
       - ${AWS_SUBNET}
 ---
 ## Control plane configs
-apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
 kind: AWSMachineTemplate
 metadata:
   name: ${CLUSTER_NAME}-controlplane
@@ -57,7 +59,6 @@ spec:
       ami:
         id: ${AWS_CONTROL_PLANE_AMI_ID}
       additionalSecurityGroups: ${AWS_CONTROL_PLANE_ADDL_SEC_GROUPS}
-      publicIP: true
       iamInstanceProfile: ${AWS_CONTROL_PLANE_IAM_PROFILE}
 ---
 apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
@@ -70,29 +71,24 @@ spec:
   replicas: ${CONTROL_PLANE_MACHINE_COUNT}
   infrastructureTemplate:
     kind: AWSMachineTemplate
-    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
     name: ${CLUSTER_NAME}-controlplane
     namespace: ${NAMESPACE}
   controlPlaneConfig:
     controlplane:
       generateType: controlplane
       talosVersion: ${TALOS_VERSION}
-      configPatches:
-        - op: add
-          path: /cluster/network/cni
-          value:
-            name: custom
-            urls:
-              - https://raw.githubusercontent.com/projectcalico/calico/${CALICO_VERSION}/manifests/calico.yaml
-        - op: add
-          path: /machine/kubelet/registerWithFQDN
-          value: true
-        - op: add
-          path: /cluster/externalCloudProvider
-          value:
-            enabled: true
-            manifests:
-              - https://raw.githubusercontent.com/siderolabs/cluster-api-templates/main/aws/manifests/ccm.yaml
+      strategicPatches:
+        - |
+          machine:
+            kubelet:
+              registerWithFQDN: true
+        - |
+          cluster:
+            externalCloudProvider:
+              enabled: true
+              manifests:
+                - https://raw.githubusercontent.com/siderolabs/cluster-api-templates/main/aws/manifests/ccm.yaml
 ---
 ## Worker deployment configs
 apiVersion: bootstrap.cluster.x-k8s.io/v1alpha3
@@ -105,14 +101,15 @@ spec:
     spec:
       generateType: join
       talosVersion: ${TALOS_VERSION}
-      configPatches:
-        - op: add
-          path: /machine/kubelet/registerWithFQDN
-          value: true
-        - op: add
-          path: /cluster/externalCloudProvider
-          value:
-            enabled: true
+      strategicPatches:
+        - |
+          machine:
+            kubelet:
+              registerWithFQDN: true
+        - |
+          cluster:
+            externalCloudProvider:
+              enabled: true
 ---
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: MachineDeployment
@@ -143,13 +140,13 @@ spec:
           name: ${CLUSTER_NAME}-workers
           namespace: ${NAMESPACE}
       infrastructureRef:
-        apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+        apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
         kind: AWSMachineTemplate
         name: ${CLUSTER_NAME}-workers
         namespace: ${NAMESPACE}
       version: ${KUBERNETES_VERSION}
 ---
-apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta2
 kind: AWSMachineTemplate
 metadata:
   name: ${CLUSTER_NAME}-workers
@@ -166,7 +163,6 @@ spec:
       ami:
         id: ${AWS_NODE_AMI_ID}
       additionalSecurityGroups: ${AWS_NODE_ADDL_SEC_GROUPS}
-      publicIP: true
       iamInstanceProfile: ${AWS_NODE_IAM_PROFILE}
 ---
 ## Health check for workers
