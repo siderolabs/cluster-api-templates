@@ -59,6 +59,7 @@ spec:
       ami:
         id: ${AWS_CONTROL_PLANE_AMI_ID}
       additionalSecurityGroups: ${AWS_CONTROL_PLANE_ADDL_SEC_GROUPS}
+      publicIP: true
       iamInstanceProfile: ${AWS_CONTROL_PLANE_IAM_PROFILE}
 ---
 apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
@@ -163,6 +164,7 @@ spec:
       ami:
         id: ${AWS_NODE_AMI_ID}
       additionalSecurityGroups: ${AWS_NODE_ADDL_SEC_GROUPS}
+      publicIP: true
       iamInstanceProfile: ${AWS_NODE_IAM_PROFILE}
 ---
 ## Health check for workers
